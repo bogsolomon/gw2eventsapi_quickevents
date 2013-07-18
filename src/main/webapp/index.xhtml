@@ -1,0 +1,38 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:h="http://java.sun.com/jsf/html">
+    <h:head>
+        <title>Quick Repeating Events Tracker</title>
+    </h:head>
+    <h:body>
+        <h:form id="form">
+			<p:dataTable var="event" value="#{quickEventBean.quickEvents}">  
+	            <p:column headerText="Event Name">    
+                	<h:outputText value="#{event.eventName}"/>
+                </p:column>  
+  
+                <p:column headerText="Map Name">  
+                	<h:outputText value="#{event.mapName}"/>
+                </p:column>
+                
+                <p:column headerText="Time Between Active">  
+                	<h:outputText value="#{event.duration}"/>
+                </p:column>
+	        </p:dataTable>
+	        
+	        <p:dataTable var="event" value="#{quickEventBean.soonEvents}">  
+	            <p:column headerText="Event Name">    
+                	<h:outputText value="#{event.eventName}"/>
+                </p:column>  
+  
+                <p:column headerText="Map Name">  
+                	<h:outputText value="#{event.mapName}"/>
+                </p:column>
+                
+                <p:column headerText="Time Until">  
+                	<h:outputText value="#{event.duration}"/>
+                </p:column>
+	        </p:dataTable>
+        </h:form>
+    </h:body>
+</html>

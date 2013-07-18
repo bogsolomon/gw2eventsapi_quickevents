@@ -19,7 +19,7 @@
                 <job-name>QuickEventsDataRetrieveJob</job-name>
 
                 <job-group>QuickEventsDataRetrieveGroup</job-group>
-                <cron-expression>0 5 * * * ?</cron-expression>
+                <cron-expression>0 1 * * * ?</cron-expression>
             </cron>
         </trigger>
     </schedule>

@@ -29,10 +29,10 @@ public class QuickEventJob implements Job {
 	private Map<String, DateTime> lastActive = new HashMap<>();
 	private Map<String, String> lastState = new HashMap<>();
 	
-	private Map<Duration, List<String>> shortPeriodEvents = new HashMap<>();
+	public static Map<Duration, List<String>> shortPeriodEvents = new HashMap<>();
 	private Map<String, Duration> shortPeriodEventsByID = new HashMap<>();
 	
-	private Map<Duration, List<String>> soonEvents = new HashMap<>();
+	public static Map<Duration, List<String>> soonEvents = new HashMap<>();
 	private Map<String, Duration> soonEventsByID = new HashMap<>();
 	
 	DateTimeZone zone = DateTimeZone.forID("America/New_York");
@@ -45,6 +45,7 @@ public class QuickEventJob implements Job {
 			throws JobExecutionException {
 		if (GW2EventsAPI.eventIdToName.size() == 0) {
 			GW2EventsAPI.generateEventIds();
+			GW2EventsAPI.generateMapIds();
 		}
 		
 		getServerData();
