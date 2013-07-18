@@ -1,6 +1,8 @@
 package ca.bsolomon.gw2events.quick;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.sf.json.JSONArray;
@@ -9,6 +11,8 @@ import net.sf.json.JSONObject;
 import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.Duration;
+import org.joda.time.Period;
 import org.joda.time.chrono.GJChronology;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -25,8 +29,16 @@ public class QuickEventJob implements Job {
 	private Map<String, DateTime> lastActive = new HashMap<>();
 	private Map<String, String> lastState = new HashMap<>();
 	
+	private Map<Duration, List<String>> shortPeriodEvents = new HashMap<>();
+	private Map<String, Duration> shortPeriodEventsByID = new HashMap<>();
+	
+	private Map<Duration, List<String>> soonEvents = new HashMap<>();
+	private Map<String, Duration> soonEventsByID = new HashMap<>();
+	
 	DateTimeZone zone = DateTimeZone.forID("America/New_York");
 	Chronology gregorianJuian = GJChronology.getInstance(zone);
+	
+	private static Period MAX_TIME = new Period(0, 5, 0, 0);
 	
 	@Override
 	public void execute(JobExecutionContext context)
@@ -38,12 +50,71 @@ public class QuickEventJob implements Job {
 		getServerData();
 		
 		computeQuickestEvents();
+		
+		computeNextEvents();
+	}
+
+	private void computeNextEvents() {
+		DateTime now = new DateTime(gregorianJuian);
+		
+		for (String eventId:lastActive.keySet()) {
+			if (lastSuccess.containsKey(eventId)) {
+				DateTime lastSuc = lastSuccess.get(eventId);
+				
+				Period per = new Period(lastSuc, lastActive.get(eventId));
+				
+				Duration duration = per.toDurationFrom(lastSuc);
+				
+				Period timePassed = new Period(lastSuc, now);
+				
+				Duration timePassedDuration = timePassed.toDurationFrom(lastSuc);
+				
+				Duration remaining = duration.minus(timePassedDuration);
+				
+				Duration maxDuration = MAX_TIME.toDurationFrom(lastSuc);
+				
+				if (remaining.isShorterThan(maxDuration)) {
+					if (!soonEvents.containsKey(remaining)) {
+						soonEvents.put(remaining, new ArrayList<String>());
+					}
+					if (!soonEvents.get(remaining).contains(eventId)) {
+						Duration oldDuration = soonEventsByID.put(eventId, remaining);
+						
+						if (oldDuration != null) {
+							shortPeriodEvents.get(oldDuration).remove(eventId);
+						}
+						
+						shortPeriodEvents.get(remaining).add(eventId);
+					}
+				}
+			}
+		}
 	}
 
 	private void computeQuickestEvents() {
 		for (String eventId:lastActive.keySet()) {
 			if (lastSuccess.containsKey(eventId)) {
+				DateTime lastSuc = lastSuccess.get(eventId);
 				
+				Period per = new Period(lastSuc, lastActive.get(eventId));
+				
+				Duration duration = per.toDurationFrom(lastSuc);
+				Duration maxDuration = MAX_TIME.toDurationFrom(lastSuc);
+				
+				if (duration.isShorterThan(maxDuration)) {
+					if (!shortPeriodEvents.containsKey(duration)) {
+						shortPeriodEvents.put(duration, new ArrayList<String>());
+					}
+					if (!shortPeriodEvents.get(duration).contains(eventId)) {
+						Duration oldDuration = shortPeriodEventsByID.put(eventId, duration);
+						
+						if (oldDuration != null) {
+							shortPeriodEvents.get(oldDuration).remove(eventId);
+						}
+						
+						shortPeriodEvents.get(duration).add(eventId);
+					}
+				}
 			}
 		}
 	}
