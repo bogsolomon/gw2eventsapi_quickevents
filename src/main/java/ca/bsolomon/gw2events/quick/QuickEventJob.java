@@ -129,9 +129,19 @@ public class QuickEventJob implements Job {
 			JSONObject obj = result.getJSONObject(i);
 			
 			String status = obj.getString("state");
-			String eventId = obj.getString("event_Id");
+			String eventId = obj.getString("event_id");
 			
-			if (!lastState.get(eventId).equals(status)) {
+			if (lastState.containsKey(eventId)) {
+				if (!lastState.get(eventId).equals(status)) {
+					if (status.equals("Active")) {
+						lastActive.put(eventId, date);
+					} else if (status.equals("Success") || status.equals("Fail")) {
+						lastSuccess.put(eventId, date);
+					}
+				}
+			} else {
+				lastState.put(eventId, status);
+				
 				if (status.equals("Active")) {
 					lastActive.put(eventId, date);
 				} else if (status.equals("Success") || status.equals("Fail")) {
