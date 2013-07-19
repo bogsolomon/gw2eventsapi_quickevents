@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -14,6 +15,8 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.joda.time.Period;
 import org.joda.time.chrono.GJChronology;
+import org.joda.time.format.PeriodFormatter;
+import org.joda.time.format.PeriodFormatterBuilder;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -25,20 +28,20 @@ public class QuickEventJob implements Job {
 	private static final String SOR_SERVID = "1013";
 	private GW2EventsAPI api = new GW2EventsAPI();
 	
-	private Map<String, DateTime> lastSuccess = new HashMap<>();
-	private Map<String, DateTime> lastActive = new HashMap<>();
-	private Map<String, String> lastState = new HashMap<>();
+	private static Map<String, DateTime> lastSuccess = new HashMap<>();
+	private static Map<String, DateTime> lastActive = new HashMap<>();
+	private static Map<String, String> lastState = new HashMap<>();
 	
-	public static Map<Duration, List<String>> shortPeriodEvents = new HashMap<>();
-	private Map<String, Duration> shortPeriodEventsByID = new HashMap<>();
+	public static Map<Duration, List<String>> shortPeriodEvents = new TreeMap<>();
+	private static Map<String, Duration> shortPeriodEventsByID = new HashMap<>();
 	
-	public static Map<Duration, List<String>> soonEvents = new HashMap<>();
-	private Map<String, Duration> soonEventsByID = new HashMap<>();
+	public static Map<Duration, List<String>> soonEvents = new TreeMap<>();
+	private static Map<String, Duration> soonEventsByID = new HashMap<>();
 	
 	DateTimeZone zone = DateTimeZone.forID("America/New_York");
 	Chronology gregorianJuian = GJChronology.getInstance(zone);
 	
-	private static Period MAX_TIME = new Period(0, 5, 0, 0);
+	private static Period MAX_TIME = new Period(0, 15, 0, 0);
 	
 	@Override
 	public void execute(JobExecutionContext context)
@@ -62,30 +65,30 @@ public class QuickEventJob implements Job {
 			if (lastSuccess.containsKey(eventId)) {
 				DateTime lastSuc = lastSuccess.get(eventId);
 				
-				Period per = new Period(lastSuc, lastActive.get(eventId));
-				
-				Duration duration = per.toDurationFrom(lastSuc);
-				
-				Period timePassed = new Period(lastSuc, now);
-				
-				Duration timePassedDuration = timePassed.toDurationFrom(lastSuc);
-				
-				Duration remaining = duration.minus(timePassedDuration);
-				
-				Duration maxDuration = MAX_TIME.toDurationFrom(lastSuc);
-				
-				if (remaining.isShorterThan(maxDuration)) {
-					if (!soonEvents.containsKey(remaining)) {
-						soonEvents.put(remaining, new ArrayList<String>());
-					}
-					if (!soonEvents.get(remaining).contains(eventId)) {
-						Duration oldDuration = soonEventsByID.put(eventId, remaining);
-						
-						if (oldDuration != null) {
-							shortPeriodEvents.get(oldDuration).remove(eventId);
+				if (lastActive.get(eventId).isBefore(lastSuc)) {
+					Duration duration = shortPeriodEventsByID.get(eventId);
+					
+					Period timePassed = new Period(lastSuc, now);
+					
+					Duration timePassedDuration = timePassed.toDurationFrom(lastSuc);
+					
+					Duration remaining = duration.minus(timePassedDuration);
+					
+					Duration maxDuration = MAX_TIME.toDurationFrom(lastSuc);
+					
+					if (remaining.isShorterThan(maxDuration)) {
+						if (!soonEvents.containsKey(remaining)) {
+							soonEvents.put(remaining, new ArrayList<String>());
 						}
-						
-						shortPeriodEvents.get(remaining).add(eventId);
+						if (!soonEvents.get(remaining).contains(eventId)) {
+							Duration oldDuration = soonEventsByID.put(eventId, remaining);
+							
+							if (oldDuration != null) {
+								soonEvents.get(oldDuration).remove(eventId);
+							}
+							
+							soonEvents.get(remaining).add(eventId);
+						}
 					}
 				}
 			}
@@ -97,23 +100,25 @@ public class QuickEventJob implements Job {
 			if (lastSuccess.containsKey(eventId)) {
 				DateTime lastSuc = lastSuccess.get(eventId);
 				
-				Period per = new Period(lastSuc, lastActive.get(eventId));
-				
-				Duration duration = per.toDurationFrom(lastSuc);
-				Duration maxDuration = MAX_TIME.toDurationFrom(lastSuc);
-				
-				if (duration.isShorterThan(maxDuration)) {
-					if (!shortPeriodEvents.containsKey(duration)) {
-						shortPeriodEvents.put(duration, new ArrayList<String>());
-					}
-					if (!shortPeriodEvents.get(duration).contains(eventId)) {
-						Duration oldDuration = shortPeriodEventsByID.put(eventId, duration);
-						
-						if (oldDuration != null) {
-							shortPeriodEvents.get(oldDuration).remove(eventId);
+				if (lastSuc.isBefore(lastActive.get(eventId))) {
+					Period per = new Period(lastSuc, lastActive.get(eventId));
+					
+					Duration duration = per.toDurationFrom(lastSuc);
+					Duration maxDuration = MAX_TIME.toDurationFrom(lastSuc);
+					
+					if (duration.isShorterThan(maxDuration)) {
+						if (!shortPeriodEvents.containsKey(duration)) {
+							shortPeriodEvents.put(duration, new ArrayList<String>());
 						}
-						
-						shortPeriodEvents.get(duration).add(eventId);
+						if (!shortPeriodEvents.get(duration).contains(eventId)) {
+							Duration oldDuration = shortPeriodEventsByID.put(eventId, duration);
+							
+							if (oldDuration != null) {
+								shortPeriodEvents.get(oldDuration).remove(eventId);
+							}
+							
+							shortPeriodEvents.get(duration).add(eventId);
+						}
 					}
 				}
 			}

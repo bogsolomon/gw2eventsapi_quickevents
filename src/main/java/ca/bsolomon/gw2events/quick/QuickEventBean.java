@@ -7,6 +7,8 @@ import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
 
 import org.joda.time.Duration;
+import org.joda.time.format.PeriodFormatter;
+import org.joda.time.format.PeriodFormatterBuilder;
 
 import ca.bsolomon.gw2event.api.GW2EventsAPI;
 import ca.bsolomon.gw2events.quick.util.EventData;
@@ -17,6 +19,13 @@ import ca.bsolomon.gw2events.quick.util.EventData;
 public class QuickEventBean {
 	
 	private GW2EventsAPI api = new GW2EventsAPI();
+	
+	PeriodFormatter formatter = new PeriodFormatterBuilder()
+			.appendMinutes()
+			.appendSuffix("m")
+			.appendSeconds()
+			.appendSuffix("s")
+			.toFormatter();
 
 	public List<EventData> getQuickEvents() {
 		List<EventData> events = new ArrayList<>();
@@ -28,7 +37,7 @@ outer:	for (Duration d :QuickEventJob.shortPeriodEvents.keySet()) {
 				String eventName = GW2EventsAPI.eventIdToName.get(eventId);
 				String mapName = api.getEventMap(eventId);
 				
-				EventData data = new EventData(eventId, eventName, mapName, d.toString());
+				EventData data = new EventData(eventId, eventName, mapName, formatter.print(d.toPeriod()));
 				events.add(data);
 	
 				count++;
@@ -52,7 +61,7 @@ outer:	for (Duration d :QuickEventJob.soonEvents.keySet()) {
 				String eventName = GW2EventsAPI.eventIdToName.get(eventId);
 				String mapName = api.getEventMap(eventId);
 				
-				EventData data = new EventData(eventId, eventName, mapName, d.toString());
+				EventData data = new EventData(eventId, eventName, mapName, formatter.print(d.toPeriod()));
 				events.add(data);
 	
 				count++;
