@@ -1,10 +1,8 @@
 package ca.bsolomon.gw2events.quick;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
 
 import org.joda.time.Chronology;
 import org.joda.time.DateTime;
@@ -15,6 +13,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 import ca.bsolomon.gw2event.api.GW2EventsAPI;
+import ca.bsolomon.gw2event.api.dao.Event;
 
 public class QuickEventJob implements Job {
 
@@ -49,15 +48,15 @@ public class QuickEventJob implements Job {
 	}
 
 	private void getServerData() {
-		JSONArray result = api.queryServerEventStatus(SOR_SERVID);
+		List<Event> result = api.queryServerEventStatus(SOR_SERVID);
 		
 		DateTime date = new DateTime(gregorianJuian);
 		
 		for (int i=0; i<result.size(); i++) {
-			JSONObject obj = result.getJSONObject(i);
+			Event obj = result.get(i);
 			
-			String status = obj.getString("state");
-			String eventId = obj.getString("event_Id");
+			String status = obj.getState();
+			String eventId = obj.getEventId();
 			
 			if (!lastState.get(eventId).equals(status)) {
 				if (status.equals("Active")) {
