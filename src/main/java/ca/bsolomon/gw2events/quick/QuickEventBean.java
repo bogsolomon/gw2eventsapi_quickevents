@@ -1,77 +1,105 @@
 package ca.bsolomon.gw2events.quick;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.faces.bean.ManagedBean;
-import javax.faces.bean.ViewScoped;
+import javax.faces.bean.SessionScoped;
 
+import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.joda.time.format.PeriodFormatter;
-import org.joda.time.format.PeriodFormatterBuilder;
 
 import ca.bsolomon.gw2event.api.GW2EventsAPI;
+import ca.bsolomon.gw2events.quick.dao.RepeatingEvent;
 import ca.bsolomon.gw2events.quick.util.EventData;
 
 
 @ManagedBean(name="quickEventBean")
-@ViewScoped
+@SessionScoped
 public class QuickEventBean {
 	
-	private GW2EventsAPI api = new GW2EventsAPI();
-	
-	PeriodFormatter formatter = new PeriodFormatterBuilder()
-			.appendMinutes()
-			.appendSuffix("m")
-			.appendSeconds()
-			.appendSuffix("s")
-			.toFormatter();
+	private int lowLevelBound = 0;
+    private int highLevelBound = 80;
+    
+    private GW2EventsAPI api = new GW2EventsAPI();
 
 	public List<EventData> getQuickEvents() {
-		List<EventData> events = new ArrayList<>();
+		List<EventData> shortPeriodEvents = new ArrayList<>();
 		
-		int count = 0;
-		
-outer:	for (Duration d :QuickEventJob.shortPeriodEvents.keySet()) {
-			for (String eventId:QuickEventJob.shortPeriodEvents.get(d)) {
-				String eventName = GW2EventsAPI.eventIdToName.get(eventId);
-				String mapName = api.getEventMap(eventId);
+		for (String eventId: QuickEventJob.events.keySet()) {
+			RepeatingEvent repEvent = QuickEventJob.events.get(eventId);
+			
+			if (lowLevelBound <= QuickEventJob.eventDetails.get(eventId).getLevel() &&
+					QuickEventJob.eventDetails.get(eventId).getLevel() <= highLevelBound  && repEvent.getDataCountInactive() != 0) {
+				long avgDurationBetween = repEvent.getInactivePeriodSum()/repEvent.getDataCountInactive();
 				
-				EventData data = new EventData(eventId, eventName, mapName, formatter.print(d.toPeriod()));
-				events.add(data);
-	
-				count++;
+				String mapId = QuickEventJob.eventDetails.get(eventId).getMapId();
 				
-				if (count >= 25) {
-					break outer;
-				}
+				EventData event = new EventData(eventId, GW2EventsAPI.eventIdToName.get(eventId), GW2EventsAPI.mapIdToName.get(mapId), 
+						new Duration(avgDurationBetween));
+				
+				shortPeriodEvents.add(event);
 			}
 		}
 		
-		return events;
+		Collections.sort(shortPeriodEvents);
+		
+		return shortPeriodEvents.subList(0, Math.min(25, shortPeriodEvents.size()));
 	}
 	
 	public List<EventData> getSoonEvents() {
 		List<EventData> events = new ArrayList<>();
 		
-		int count = 0;
+		DateTime now = new DateTime();
 		
-outer:	for (Duration d :QuickEventJob.soonEvents.keySet()) {
-			for (String eventId:QuickEventJob.soonEvents.get(d)) {
-				String eventName = GW2EventsAPI.eventIdToName.get(eventId);
-				String mapName = api.getEventMap(eventId);
+		for (String eventId: QuickEventJob.events.keySet()) {
+			RepeatingEvent repEvent = QuickEventJob.events.get(eventId);
+			
+			if (lowLevelBound <= QuickEventJob.eventDetails.get(eventId).getLevel() &&
+					QuickEventJob.eventDetails.get(eventId).getLevel() <= highLevelBound) {
 				
-				EventData data = new EventData(eventId, eventName, mapName, formatter.print(d.toPeriod()));
-				events.add(data);
-	
-				count++;
-				
-				if (count >= 25) {
-					break outer;
+				if (repEvent.isLastFailSucc() && repEvent.getDataCountInactive() != 0) {
+					long avgDurationBetween = repEvent.getInactivePeriodSum()/repEvent.getDataCountInactive();
+					
+					DateTime lastEnded = repEvent.getLastSuccFailTime();
+					
+					Duration duration = new Duration(lastEnded, now);
+					
+					long timeTo = avgDurationBetween - duration.getMillis();
+					
+					String mapId = QuickEventJob.eventDetails.get(eventId).getMapId();
+					
+					EventData event = new EventData(eventId, GW2EventsAPI.eventIdToName.get(eventId), GW2EventsAPI.mapIdToName.get(mapId), 
+							new Duration(timeTo));
+					
+					events.add(event);
 				}
 			}
 		}
 		
-		return events;
+		Collections.sort(events);
+		
+		return events.subList(0, Math.min(25, events.size()));
+	}
+	
+	public int getLowLevelBound() {
+		return lowLevelBound;
+	}
+
+	public void setLowLevelBound(int lowLevelBound) {
+		this.lowLevelBound = lowLevelBound;
+	}
+
+	public int getHighLevelBound() {
+		return highLevelBound;
+	}
+
+	public void setHighLevelBound(int highLevelBound) {
+		this.highLevelBound = highLevelBound;
+	}
+	
+	public void handleLevelRangeChange() {  
+		
 	}
 }

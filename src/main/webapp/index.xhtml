@@ -7,7 +7,19 @@
     </h:head>
     <h:body>
         <h:form id="form">
-			<p:dataTable var="event" value="#{quickEventBean.quickEvents}">  
+        	<h:panelGrid columns="3" style="margin-bottom:10px" cellpadding="5">
+	        	<h:outputText value="Level Range: " />
+	        	<p:inputText id="lowLevelBound" value="#{quickEventBean.lowLevelBound}" size="5"
+	        		onkeypress="if (event.keyCode == 13) {jQuery('#lowLevelBound').trigger('change'); return false; }" >
+	        		<p:ajax event="change" update=":form:quickEvents" listener="#{quickEventBean.handleLevelRangeChange}" />
+	        	</p:inputText>
+	        	<p:inputText id="highLevelBound" value="#{quickEventBean.highLevelBound}"  size="5"
+					onkeypress="if (event.keyCode == 13) {jQuery('#highLevelBound').trigger('change'); return false; }" >
+	        		<p:ajax event="change" update=":form:quickEvents" listener="#{quickEventBean.handleLevelRangeChange}" />
+	        	</p:inputText>
+	        </h:panelGrid>  
+        
+			<p:dataTable var="event" value="#{quickEventBean.quickEvents}" id="quickEvents">  
 	            <p:column headerText="Event Name">    
                 	<h:outputText value="#{event.eventName}"/>
                 </p:column>  
@@ -17,21 +29,7 @@
                 </p:column>
                 
                 <p:column headerText="Time Between Active">  
-                	<h:outputText value="#{event.duration}"/>
-                </p:column>
-	        </p:dataTable>
-	        
-	        <p:dataTable var="event" value="#{quickEventBean.soonEvents}">  
-	            <p:column headerText="Event Name">    
-                	<h:outputText value="#{event.eventName}"/>
-                </p:column>  
-  
-                <p:column headerText="Map Name">  
-                	<h:outputText value="#{event.mapName}"/>
-                </p:column>
-                
-                <p:column headerText="Time Until">  
-                	<h:outputText value="#{event.duration}"/>
+                	<h:outputText value="#{event.stringDuration}"/>
                 </p:column>
 	        </p:dataTable>
         </h:form>

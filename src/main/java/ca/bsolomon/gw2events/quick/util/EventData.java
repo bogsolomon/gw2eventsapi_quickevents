@@ -1,18 +1,27 @@
 package ca.bsolomon.gw2events.quick.util;
 
-import org.joda.time.DateTime;
+import org.joda.time.Duration;
+import org.joda.time.format.PeriodFormatter;
+import org.joda.time.format.PeriodFormatterBuilder;
 
-public class EventData {
+public class EventData implements Comparable<EventData>{
 
 	private final String eventId;
 	private final String eventName;
 	private final String mapName;
-	private final String duration;
+	private final Duration duration;
 	
 	private int fHashCode = 0;
 	
+	private static PeriodFormatter formatter = new PeriodFormatterBuilder()
+			.appendMinutes()
+			.appendSuffix("m")
+			.appendSeconds()
+			.appendSuffix("s")
+			.toFormatter();
+	
 	public EventData(String eventId, String eventName,
-			String mapName, String duration) {
+			String mapName, Duration duration) {
 		super();
 		this.eventId = eventId;
 		this.eventName = eventName;
@@ -56,7 +65,16 @@ public class EventData {
 		return fHashCode;
 	}
 
-	public String getDuration() {
+	public Duration getDuration() {
 		return duration;
+	}
+	
+	public String getStringDuration() {
+		return formatter.print(duration.toPeriod());
+	}
+
+	@Override
+	public int compareTo(EventData o) {
+		return this.duration.compareTo(o.getDuration());
 	}
 }
