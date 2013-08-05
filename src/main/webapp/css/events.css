@@ -1,0 +1,19 @@
+.ui-panel {
+	margin: 10px;
+}
+
+.ui-dashboard-column {
+	min-width:220px;
+}
+.ui-panel-collapsed-h .ui-panel-titlebar {
+	background:#003946;	
+}
+
+.ui-widget, .ui-widget .ui-widget
+{
+    font-size: 90% !important;
+}
+
+.hide-column-names table thead tr {
+    display: none;
+}

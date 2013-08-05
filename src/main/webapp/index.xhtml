@@ -1,37 +1,58 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:p="http://primefaces.org/ui"
-      xmlns:h="http://java.sun.com/jsf/html">
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core">
     <h:head>
-    	<meta http-equiv="refresh" content="60"/>
+    	<!--  >meta http-equiv="refresh" content="60"/-->
         <title>Quick Repeating Events Tracker</title>
+        <link rel="stylesheet" type="text/css" href="css/events.css"/>
     </h:head>
     <h:body>
         <h:form id="form">
+        	 <p:poll interval="60"   
+            	listener="#{userValues.updateEvents(dataTable)}" 
+            	widgetVar="pollTemple" autoStart="true"/>
+        
         	<h:panelGrid columns="3" style="margin-bottom:10px" cellpadding="5">
 	        	<h:outputText value="Level Range: " />
-	        	<p:inputText id="lowLevelBound" value="#{quickEventBean.lowLevelBound}" size="5"
+	        	<p:inputText id="lowLevelBound" value="#{userValues.lowLevelBound}" size="5"
 	        		onkeypress="if (event.keyCode == 13) {jQuery('#lowLevelBound').trigger('change'); return false; }" >
-	        		<p:ajax event="change" update=":form:quickEvents" listener="#{quickEventBean.handleLevelRangeChange}" />
+	        		<p:ajax event="change" update=":form:quickEvents" listener="#{userValues.handleLevelRangeChange}" />
 	        	</p:inputText>
-	        	<p:inputText id="highLevelBound" value="#{quickEventBean.highLevelBound}"  size="5"
+	        	<p:inputText id="highLevelBound" value="#{userValues.highLevelBound}"  size="5"
 					onkeypress="if (event.keyCode == 13) {jQuery('#highLevelBound').trigger('change'); return false; }" >
-	        		<p:ajax event="change" update=":form:quickEvents" listener="#{quickEventBean.handleLevelRangeChange}" />
+	        		<p:ajax event="change" update=":form:quickEvents" listener="#{userValues.handleLevelRangeChange}" />
+	        	</p:inputText>
+	        	<h:outputText value="Event ID: " />
+	        	<p:inputText id="eventIdTF" value="#{userValues.eventId}"  size="5"
+					onkeypress="if (event.keyCode == 13) {jQuery('#highLevelBound').trigger('change'); return false; }" >
+	        		<p:ajax event="change" update=":form" listener="#{userValues.handleLevelRangeChange}" />
 	        	</p:inputText>
 	        </h:panelGrid>  
         
-			<p:dataTable var="event" value="#{quickEventBean.quickEvents}" id="quickEvents">  
-	            <p:column headerText="Event Name">    
+			<p:dataTable var="event" value="#{quickEventBean.quickEvents}" id="quickEvents" paginator="true" rows="25" binding="#{dataTable}" sortMode="multiple">  
+	            <p:column headerText="Event Name" sortBy="eventName" id="eventName">    
                 	<h:outputText value="#{event.eventName}"/>
                 </p:column>  
   
-                <p:column headerText="Map Name">  
+                <p:column headerText="Map Name" sortBy="mapName">  
                 	<h:outputText value="#{event.mapName}"/>
                 </p:column>
                 
-                <p:column headerText="Time Between Active">  
-                	<h:outputText value="#{event.stringDuration}"/>
+                <p:column headerText="Time Between Active" sortBy="duration">  
+                	<h:outputText value="#{event.duration}">
+                		<f:converter converterId="durationConverter"/>
+                	</h:outputText>
                 </p:column>
 	        </p:dataTable>
+	        
+	        <h:panelGrid columns="3" style="margin-bottom:10px" cellpadding="5">
+	        	<h:outputText value="#{quickEventBean.event.eventName}" />
+	        	<h:outputText value="#{quickEventBean.event.mapName}" />
+	        	<h:outputText value="#{quickEventBean.event.duration}" >
+	        		<f:converter converterId="durationConverter"/>
+	        	</h:outputText>
+	        </h:panelGrid>
         </h:form>
     </h:body>
 </html>

@@ -9,6 +9,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.joda.time.chrono.GJChronology;
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -19,6 +20,7 @@ import ca.bsolomon.gw2event.api.dao.EventDetails;
 import ca.bsolomon.gw2events.quick.dao.RepeatingEvent;
 import ca.bsolomon.gw2events.quick.util.EventStatusValues;
 
+@DisallowConcurrentExecution
 public class QuickEventJob implements Job {
 
 	private static final String SOR_SERVID = "1013";
@@ -62,33 +64,34 @@ public class QuickEventJob implements Job {
 			
 			RepeatingEvent repEvent = events.get(eventId);
 			
-			if (status.equals(EventStatusValues.ACTIVE.toString()) && !repEvent.isLastActive()
-					&& repEvent.getLastSuccFailTime() != null) {
-				DateTime lastEnd = repEvent.getLastSuccFailTime();
-				
+			if (status.equals(EventStatusValues.ACTIVE.toString()) && !repEvent.isLastActive()) {
 				repEvent.setLastActiveTime(now);
 				repEvent.setLastFailSucc(false);
 				repEvent.setLastActive(true);
 				
-				Duration duration = new Duration(lastEnd, now);
-				long durationMilli = duration.getMillis();
-				
-				repEvent.setInactivePeriodSum(repEvent.getInactivePeriodSum()+durationMilli);
-				repEvent.setDataCountInactive(repEvent.getDataCountInactive()+1);
-			} else if (status.equals(EventStatusValues.FAIL.toString()) ||
-					status.equals(EventStatusValues.SUCCESS.toString())  && !repEvent.isLastFailSucc()
-					&& repEvent.getLastActiveTime() != null) {
-				DateTime lastStart = repEvent.getLastActiveTime();
-				
+				if (repEvent.getLastSuccFailTime() != null) {
+					DateTime lastEnd = repEvent.getLastSuccFailTime();
+					
+					Duration duration = new Duration(lastEnd, now);
+					long durationMilli = duration.getMillis();
+					
+					repEvent.setInactivePeriodSum(repEvent.getInactivePeriodSum()+durationMilli);
+					repEvent.setDataCountInactive(repEvent.getDataCountInactive()+1);
+				}
+			} else if (!status.equals(EventStatusValues.ACTIVE.toString())  && !repEvent.isLastFailSucc()) {
 				repEvent.setLastSuccFailTime(now);
 				repEvent.setLastFailSucc(true);
 				repEvent.setLastActive(false);
-				
-				Duration duration = new Duration(lastStart, now);
-				long durationMilli = duration.getMillis();
-				
-				repEvent.setActivePeriodSum(repEvent.getActivePeriodSum()+durationMilli);
-				repEvent.setDataCountActive(repEvent.getDataCountActive()+1);
+			
+				if (repEvent.getLastActiveTime() != null) {
+					DateTime lastStart = repEvent.getLastActiveTime();
+					
+					Duration duration = new Duration(lastStart, now);
+					long durationMilli = duration.getMillis();
+					
+					repEvent.setActivePeriodSum(repEvent.getActivePeriodSum()+durationMilli);
+					repEvent.setDataCountActive(repEvent.getDataCountActive()+1);
+				}
 			}
 		}
 	}

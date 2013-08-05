@@ -13,13 +13,6 @@ public class EventData implements Comparable<EventData>{
 	
 	private int fHashCode = 0;
 	
-	private static PeriodFormatter formatter = new PeriodFormatterBuilder()
-			.appendMinutes()
-			.appendSuffix("m")
-			.appendSeconds()
-			.appendSuffix("s")
-			.toFormatter();
-	
 	public EventData(String eventId, String eventName,
 			String mapName, Duration duration) {
 		super();
@@ -67,10 +60,6 @@ public class EventData implements Comparable<EventData>{
 
 	public Duration getDuration() {
 		return duration;
-	}
-	
-	public String getStringDuration() {
-		return formatter.print(duration.toPeriod());
 	}
 
 	@Override
